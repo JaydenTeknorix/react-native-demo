@@ -26,8 +26,7 @@
     "plugins": [
       "expo-image",
       "expo-web-browser",
-      "expo-maps",
-      "expo-router"
+      "expo-maps"
     ]
   }
 }
