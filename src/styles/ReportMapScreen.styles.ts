@@ -10,10 +10,6 @@ export const MapWrapper = styled.View`
 `;
 
 export const HeaderOverlay = styled.View`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
   padding: 16px 20px 12px;
   background-color: rgba(255, 255, 255, 0.95);
   border-bottom-width: 1px;

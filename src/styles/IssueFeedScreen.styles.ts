@@ -45,6 +45,20 @@ export const SearchInput = styled.TextInput`
   margin-left: 8px;
 `;
 
+export const SearchActions = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+`;
+
+export const FilterIconButton = styled.TouchableOpacity`
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  align-items: center;
+  justify-content: center;
+`;
+
 // ── Filter chips ──────────────────────────────────────────────────
 export const FilterScroll = styled.ScrollView.attrs(() => ({
   horizontal: true,
@@ -158,4 +172,85 @@ export const EmptyStateText = styled.Text`
   font-weight: 600;
   color: #adb5bd;
   text-align: center;
+`;
+
+export const ModalBackdrop = styled.View`
+  flex: 1;
+  background-color: rgba(0, 0, 0, 0.35);
+  justify-content: flex-end;
+`;
+
+export const FilterSheet = styled.View`
+  background-color: #ffffff;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 8px 20px 28px;
+  max-height: 78%;
+`;
+
+export const SheetHandle = styled.View`
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: #dee2e6;
+  align-self: center;
+  margin: 10px 0 16px;
+`;
+
+export const SheetTitle = styled.Text`
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+`;
+
+export const SectionLabel = styled.Text`
+  font-size: 12px;
+  font-weight: 600;
+  color: #adb5bd;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-top: 18px;
+  margin-bottom: 8px;
+`;
+
+export const OptionRow = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+export const OptionChip = styled.TouchableOpacity<{ active: boolean }>`
+  padding: 8px 14px;
+  border-radius: 999px;
+  background-color: ${({ active }) => (active ? '#4361EE' : '#f4f6fb')};
+  border-width: 1px;
+  border-color: ${({ active }) => (active ? '#4361EE' : '#dee2e6')};
+`;
+
+export const OptionChipText = styled.Text<{ active: boolean }>`
+  font-size: 13px;
+  font-weight: 500;
+  color: ${({ active }) => (active ? '#ffffff' : '#6c757d')};
+`;
+
+export const SheetFooter = styled.View`
+  flex-direction: row;
+  gap: 10px;
+  margin-top: 24px;
+`;
+
+export const FooterButton = styled.TouchableOpacity<{ primary?: boolean }>`
+  flex: 1;
+  border-radius: 12px;
+  padding: 13px;
+  align-items: center;
+  border-width: ${({ primary }) => (primary ? 0 : 1)}px;
+  border-color: #dee2e6;
+  background-color: ${({ primary }) => (primary ? '#4361EE' : '#ffffff')};
+`;
+
+export const FooterButtonText = styled.Text<{ primary?: boolean }>`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ primary }) => (primary ? '#ffffff' : '#495057')};
 `;

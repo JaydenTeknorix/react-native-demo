@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { FlatList, Modal, ScrollView, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
 import { DUMMY_ISSUES } from '../data/dummyIssues';
 import { Issue, IssueCategory, IssueStatus } from '../types/issue';
 import {
@@ -20,9 +19,8 @@ import {
   HeaderSubtitle,
   SearchRow,
   SearchInput,
-  FilterScroll,
-  FilterChip,
-  FilterChipText,
+  SearchActions,
+  FilterIconButton,
   IssueCard,
   IssueCardImage,
   IssueCardImagePlaceholder,
@@ -36,27 +34,58 @@ import {
   CategoryTagText,
   EmptyState,
   EmptyStateText,
+  ModalBackdrop,
+  FilterSheet,
+  SheetHandle,
+  SheetTitle,
+  SectionLabel,
+  OptionRow,
+  OptionChip,
+  OptionChipText,
+  SheetFooter,
+  FooterButton,
+  FooterButtonText,
 } from '../styles/IssueFeedScreen.styles';
 import TabBar from '../components/TabBar';
 import type { AppStackParams } from '../AppLayout';
 
-const ALL_FILTERS = ['All', ...CATEGORIES] as const;
-type FilterValue = 'All' | IssueCategory;
-
 type NavProp = NativeStackNavigationProp<AppStackParams, 'Feed'>;
+const STATUS_OPTIONS: IssueStatus[] = ['not_done', 'in_progress', 'completed'];
 
 export default function IssueFeedScreen() {
   const navigation = useNavigation<NavProp>();
   const [query, setQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<FilterValue>('All');
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [selectedStatuses, setSelectedStatuses] = useState<IssueStatus[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<IssueCategory[]>([]);
+
+  const toggleStatus = (status: IssueStatus) => {
+    setSelectedStatuses((prev) =>
+      prev.includes(status) ? prev.filter((value) => value !== status) : [...prev, status]
+    );
+  };
+
+  const toggleCategory = (category: IssueCategory) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category) ? prev.filter((value) => value !== category) : [...prev, category]
+    );
+  };
+
+  const clearFilters = () => {
+    setSelectedStatuses([]);
+    setSelectedCategories([]);
+  };
 
   const filtered = DUMMY_ISSUES.filter((issue) => {
-    const matchesCategory = activeFilter === 'All' || issue.category === activeFilter;
+    const matchesStatus =
+      selectedStatuses.length === 0 || selectedStatuses.includes(issue.status as IssueStatus);
+    const matchesCategory =
+      selectedCategories.length === 0 || selectedCategories.includes(issue.category);
     const matchesQuery =
       issue.title.toLowerCase().includes(query.toLowerCase()) ||
       issue.description.toLowerCase().includes(query.toLowerCase()) ||
       issue.location.address.toLowerCase().includes(query.toLowerCase());
-    return matchesCategory && matchesQuery;
+    return matchesStatus && matchesCategory && matchesQuery;
   });
 
   const renderItem = ({ item }: { item: Issue }) => (
@@ -100,7 +129,6 @@ export default function IssueFeedScreen() {
       <SafeAreaView edges={['top']}>
         <HeaderArea>
           <HeaderTitle>CityReport</HeaderTitle>
-          <HeaderSubtitle>Community issue tracker</HeaderSubtitle>
 
           <SearchRow>
             <Ionicons name="search-outline" size={18} color="#adb5bd" />
@@ -111,30 +139,23 @@ export default function IssueFeedScreen() {
               onChangeText={setQuery}
               returnKeyType="search"
             />
-            {query.length > 0 && (
-              <Ionicons
-                name="close-circle"
-                size={18}
-                color="#adb5bd"
-                onPress={() => setQuery('')}
-              />
-            )}
+            <SearchActions>
+              {query.length > 0 && (
+                <FilterIconButton onPress={() => setQuery('')}>
+                  <Ionicons name="close-circle" size={18} color="#adb5bd" />
+                </FilterIconButton>
+              )}
+              <FilterIconButton onPress={() => setFilterVisible(true)}>
+                <Ionicons
+                  name="options-outline"
+                  size={18}
+                  color={selectedStatuses.length || selectedCategories.length ? '#4361EE' : '#6c757d'}
+                />
+              </FilterIconButton>
+            </SearchActions>
           </SearchRow>
         </HeaderArea>
       </SafeAreaView>
-
-      {/* Category filter */}
-      <FilterScroll>
-        {ALL_FILTERS.map((f) => (
-          <FilterChip
-            key={f}
-            active={activeFilter === f}
-            onPress={() => setActiveFilter(f as FilterValue)}
-          >
-            <FilterChipText active={activeFilter === f}>{f}</FilterChipText>
-          </FilterChip>
-        ))}
-      </FilterScroll>
 
       {/* List */}
       <FlatList
@@ -150,6 +171,66 @@ export default function IssueFeedScreen() {
           </EmptyState>
         }
       />
+
+      <Modal
+        visible={filterVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setFilterVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setFilterVisible(false)}>
+          <ModalBackdrop>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <FilterSheet>
+                <SheetHandle />
+                <SheetTitle>Filter Issues</SheetTitle>
+
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  <SectionLabel>Status</SectionLabel>
+                  <OptionRow>
+                    {STATUS_OPTIONS.map((status) => {
+                      const active = selectedStatuses.includes(status);
+                      return (
+                        <OptionChip key={status} active={active} onPress={() => toggleStatus(status)}>
+                          <OptionChipText active={active}>{STATUS_LABELS[status]}</OptionChipText>
+                        </OptionChip>
+                      );
+                    })}
+                  </OptionRow>
+
+                  <SectionLabel>Category</SectionLabel>
+                  <OptionRow>
+                    {CATEGORIES.map((category) => {
+                      const active = selectedCategories.includes(category);
+                      return (
+                        <OptionChip
+                          key={category}
+                          active={active}
+                          onPress={() => toggleCategory(category)}
+                        >
+                          <OptionChipText active={active}>{category}</OptionChipText>
+                        </OptionChip>
+                      );
+                    })}
+                  </OptionRow>
+
+                  <SheetFooter>
+                    <FooterButton onPress={clearFilters}>
+                      <FooterButtonText>Reset</FooterButtonText>
+                    </FooterButton>
+                    <FooterButton primary onPress={() => setFilterVisible(false)}>
+                      <FooterButtonText primary>Apply</FooterButtonText>
+                    </FooterButton>
+                  </SheetFooter>
+                </ScrollView>
+              </FilterSheet>
+            </TouchableWithoutFeedback>
+          </ModalBackdrop>
+        </TouchableWithoutFeedback>
+      </Modal>
 
       <TabBar />
     </ScreenContainer>

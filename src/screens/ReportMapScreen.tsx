@@ -68,7 +68,7 @@ interface PendingPin {
   longitude: number;
 }
 
-// Local in-memory store (replace with Zustand later)
+// Local in-memory store 
 let localIssues: Issue[] = [...DUMMY_ISSUES];
 
 export default function ReportMapScreen() {
@@ -87,7 +87,7 @@ export default function ReportMapScreen() {
   const [formImageUri, setFormImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // ── Map handlers ────────────────────────────────────────────────
+  // Map handlers 
   const handleLongPress = (e: LongPressEvent) => {
     const { latitude, longitude } = e.nativeEvent.coordinate;
     setPendingPin({ latitude, longitude });
@@ -100,8 +100,8 @@ export default function ReportMapScreen() {
     setPendingPin(null);
   };
 
-  // ── Image picker ────────────────────────────────────────────────
-  const handlePickImage = async () => {
+  // Image picker
+  const handlePickFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Required', 'Gallery access is needed to attach a photo.');
@@ -118,7 +118,34 @@ export default function ReportMapScreen() {
     }
   };
 
-  // ── Form helpers ────────────────────────────────────────────────
+  const handleTakePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Camera access is needed to take a photo.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      setFormImageUri(result.assets[0].uri);
+    }
+  };
+
+  const handlePickImage = () => {
+    Alert.alert('Attach Photo', 'Choose photo source', [
+      { text: 'Take photo', onPress: handleTakePhoto },
+      { text: 'Choose from gallery', onPress: handlePickFromGallery },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  // Form helpers 
   const resetForm = () => {
     setFormTitle('');
     setFormDescription('');
@@ -160,7 +187,6 @@ export default function ReportMapScreen() {
     Alert.alert('Issue Reported', `"${newIssue.title}" has been pinned on the map.`);
   };
 
-  // ── Render ──────────────────────────────────────────────────────
   return (
     <ScreenContainer>
       <MapWrapper>
@@ -200,7 +226,16 @@ export default function ReportMapScreen() {
         </MapView>
 
         {/* Header overlay */}
-        <SafeAreaView edges={['top']} style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+        <SafeAreaView
+          edges={['top', 'left', 'right']}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: '#ffffff',
+          }}
+        >
           <HeaderOverlay>
             <HeaderTitle>Report an Issue</HeaderTitle>
             <HeaderHint>Long-press on the map to drop a pin</HeaderHint>
@@ -213,17 +248,9 @@ export default function ReportMapScreen() {
             <MarkerCountText>{allIssues.length} issues pinned</MarkerCountText>
           </MarkerCountBadge>
         )}
-
-        {/* FAB — tap to re-enable hint */}
-        {mapReady && (
-          <PinFab>
-            <Ionicons name="map-outline" size={20} color="#fff" />
-            <PinFabText>Long-press to pin</PinFabText>
-          </PinFab>
-        )}
       </MapWrapper>
 
-      {/* ── Report Form Modal ─────────────────────────────────────── */}
+      {/* Report Form Modal  */}
       <Modal
         visible={formVisible}
         transparent
@@ -235,6 +262,7 @@ export default function ReportMapScreen() {
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
               keyboardVerticalOffset={0}
+              style={{ flex: 1, justifyContent: 'flex-end' }}
             >
               <TouchableWithoutFeedback onPress={() => {}}>
                 <Sheet>
@@ -309,7 +337,7 @@ export default function ReportMapScreen() {
                     ) : (
                       <ImagePickerButton onPress={handlePickImage}>
                         <Ionicons name="image-outline" size={20} color="#6c757d" />
-                        <ImagePickerText>Choose from gallery</ImagePickerText>
+                        <ImagePickerText>Add photo</ImagePickerText>
                       </ImagePickerButton>
                     )}
 

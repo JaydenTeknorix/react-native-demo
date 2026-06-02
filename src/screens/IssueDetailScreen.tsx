@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Alert, Platform, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Platform, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import MapView, { Marker, PROVIDER_DEFAULT, PROVIDER_GOOGLE } from 'react-native-maps';
-
 import { DUMMY_ISSUES } from '../data/dummyIssues';
 import { IssueStatus } from '../types/issue';
 import {
@@ -50,6 +49,7 @@ export default function IssueDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute<DetailRouteProp>();
   const { issueId } = route.params;
+  const insets = useSafeAreaInsets();
 
   const issue = DUMMY_ISSUES.find((i) => i.id === issueId);
   const [currentStatus, setCurrentStatus] = useState<IssueStatus>(
@@ -71,7 +71,11 @@ export default function IssueDetailScreen() {
 
   return (
     <ScreenContainer>
-      <ScrollView showsVerticalScrollIndicator={false} bounces>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces
+        contentContainerStyle={{ paddingTop: insets.top }}
+      >
         {/* Hero */}
         {issue.imageUri ? (
           <HeroImage source={{ uri: issue.imageUri }} resizeMode="cover" />
@@ -82,11 +86,26 @@ export default function IssueDetailScreen() {
         )}
 
         {/* Floating back button */}
-        <SafeAreaView edges={['top']} style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
-          <BackButton onPress={() => navigation.goBack()} accessibilityLabel="Go back">
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10,
+            // Helps the overlay stay above other views on Android.
+            elevation: 10,
+          }}
+        >
+          <BackButton
+            onPress={() => navigation.goBack()}
+            accessibilityLabel="Go back"
+            style={{ top: insets.top + 8, left: 16 + insets.left }}
+          >
             <Ionicons name="chevron-back" size={22} color="#1a1a2e" />
           </BackButton>
-        </SafeAreaView>
+        </View>
 
         {/* Content card */}
         <ContentCard>
