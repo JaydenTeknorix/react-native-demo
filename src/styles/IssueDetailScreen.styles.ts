@@ -153,3 +153,20 @@ export const StatusButtonText = styled.Text<{ active: boolean; variant: string }
     return '#1e7e34';
   }};
 `;
+
+export const DeleteButton = styled.TouchableOpacity`
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 12px;
+  align-items: center;
+  background-color: #fff0f0;
+  border-width: 1.5px;
+  border-color: #e63946;
+`;
+
+export const DeleteButtonText = styled.Text`
+  font-size: 14px;
+  font-weight: 700;
+  color: #e63946;
+  letter-spacing: 0.3px;
+`;

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Alert, Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import MapView, { Marker, PROVIDER_DEFAULT, PROVIDER_GOOGLE } from 'react-native-maps';
-import { DUMMY_ISSUES } from '../data/dummyIssues';
+import { useIssues } from '../store/issuesStore';
 import { IssueStatus } from '../types/issue';
 import {
   CATEGORY_COLORS,
@@ -31,6 +31,8 @@ import {
   StatusButtonsRow,
   StatusButton,
   StatusButtonText,
+  DeleteButton,
+  DeleteButtonText,
 } from '../styles/IssueDetailScreen.styles';
 
 type HomeStackParamList = {
@@ -42,28 +44,41 @@ type DetailRouteProp = RouteProp<HomeStackParamList, 'IssueDetail'>;
 
 const STATUS_OPTIONS: IssueStatus[] = ['not_done', 'in_progress', 'completed'];
 
-// In-memory status override (real apps would use Zustand/API)
-const statusOverrides: Record<string, IssueStatus> = {};
-
 export default function IssueDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute<DetailRouteProp>();
   const { issueId } = route.params;
   const insets = useSafeAreaInsets();
 
-  const issue = DUMMY_ISSUES.find((i) => i.id === issueId);
-  const [currentStatus, setCurrentStatus] = useState<IssueStatus>(
-    statusOverrides[issueId] ?? issue?.status ?? 'not_done'
-  );
+  const { issues, updateIssueStatus, deleteIssue } = useIssues();
+  const issue = issues.find((i) => i.id === issueId);
 
+  // Issue was deleted (completed → deleted) or not found
   if (!issue) {
     return null;
   }
 
-  const handleStatusChange = (status: IssueStatus) => {
-    statusOverrides[issueId] = status;
-    setCurrentStatus(status);
+  const handleStatusChange = async (status: IssueStatus) => {
+    await updateIssueStatus(issueId, status);
     Alert.alert('Status Updated', `Issue marked as "${STATUS_LABELS[status]}"`);
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Issue',
+      'Are you sure you want to delete this issue? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteIssue(issueId);
+            navigation.goBack();
+          },
+        },
+      ]
+    );
   };
 
   const catBg = CATEGORY_COLORS[issue.category];
@@ -94,7 +109,6 @@ export default function IssueDetailScreen() {
             left: 0,
             right: 0,
             zIndex: 10,
-            // Helps the overlay stay above other views on Android.
             elevation: 10,
           }}
         >
@@ -111,9 +125,9 @@ export default function IssueDetailScreen() {
         <ContentCard>
           <TitleRow>
             <IssueTitle>{issue.title}</IssueTitle>
-            <StatusBadge status={currentStatus}>
-              <StatusBadgeText status={currentStatus}>
-                {STATUS_LABELS[currentStatus]}
+            <StatusBadge status={issue.status}>
+              <StatusBadgeText status={issue.status}>
+                {STATUS_LABELS[issue.status]}
               </StatusBadgeText>
             </StatusBadge>
           </TitleRow>
@@ -137,7 +151,9 @@ export default function IssueDetailScreen() {
 
           {/* Description */}
           <SectionLabel>Description</SectionLabel>
-          <DescriptionText>{issue.description}</DescriptionText>
+          <DescriptionText>
+            {issue.description || 'No description provided.'}
+          </DescriptionText>
 
           <Divider />
 
@@ -178,16 +194,27 @@ export default function IssueDetailScreen() {
               <StatusButton
                 key={s}
                 variant={s}
-                active={currentStatus === s}
+                active={issue.status === s}
                 onPress={() => handleStatusChange(s)}
                 activeOpacity={0.8}
               >
-                <StatusButtonText variant={s} active={currentStatus === s}>
+                <StatusButtonText variant={s} active={issue.status === s}>
                   {STATUS_LABELS[s]}
                 </StatusButtonText>
               </StatusButton>
             ))}
           </StatusButtonsRow>
+
+          {/* Delete button — only visible when completed */}
+          {issue.status === 'completed' && (
+            <DeleteButton
+              onPress={handleDelete}
+              activeOpacity={0.8}
+              accessibilityLabel="Delete issue"
+            >
+              <DeleteButtonText>Delete Issue</DeleteButtonText>
+            </DeleteButton>
+          )}
         </ContentCard>
       </ScrollView>
     </ScreenContainer>

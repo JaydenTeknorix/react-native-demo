@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { DUMMY_ISSUES } from '../data/dummyIssues';
+import { useIssues } from '../store/issuesStore';
 import { Issue, IssueCategory, IssueStatus } from '../types/issue';
 import {
   CATEGORIES,
@@ -16,7 +16,6 @@ import {
   ScreenContainer,
   HeaderArea,
   HeaderTitle,
-  HeaderSubtitle,
   SearchRow,
   SearchInput,
   SearchActions,
@@ -54,6 +53,8 @@ const STATUS_OPTIONS: IssueStatus[] = ['not_done', 'in_progress', 'completed'];
 
 export default function IssueFeedScreen() {
   const navigation = useNavigation<NavProp>();
+  const { issues, loading } = useIssues();
+
   const [query, setQuery] = useState('');
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<IssueStatus[]>([]);
@@ -61,13 +62,13 @@ export default function IssueFeedScreen() {
 
   const toggleStatus = (status: IssueStatus) => {
     setSelectedStatuses((prev) =>
-      prev.includes(status) ? prev.filter((value) => value !== status) : [...prev, status]
+      prev.includes(status) ? prev.filter((v) => v !== status) : [...prev, status]
     );
   };
 
   const toggleCategory = (category: IssueCategory) => {
     setSelectedCategories((prev) =>
-      prev.includes(category) ? prev.filter((value) => value !== category) : [...prev, category]
+      prev.includes(category) ? prev.filter((v) => v !== category) : [...prev, category]
     );
   };
 
@@ -76,15 +77,16 @@ export default function IssueFeedScreen() {
     setSelectedCategories([]);
   };
 
-  const filtered = DUMMY_ISSUES.filter((issue) => {
+  const filtered = issues.filter((issue) => {
     const matchesStatus =
-      selectedStatuses.length === 0 || selectedStatuses.includes(issue.status as IssueStatus);
+      selectedStatuses.length === 0 || selectedStatuses.includes(issue.status);
     const matchesCategory =
       selectedCategories.length === 0 || selectedCategories.includes(issue.category);
+    const q = query.toLowerCase();
     const matchesQuery =
-      issue.title.toLowerCase().includes(query.toLowerCase()) ||
-      issue.description.toLowerCase().includes(query.toLowerCase()) ||
-      issue.location.address.toLowerCase().includes(query.toLowerCase());
+      issue.title.toLowerCase().includes(q) ||
+      issue.description.toLowerCase().includes(q) ||
+      issue.location.address.toLowerCase().includes(q);
     return matchesStatus && matchesCategory && matchesQuery;
   });
 
@@ -106,7 +108,7 @@ export default function IssueFeedScreen() {
           <IssueCardTitle numberOfLines={1}>{item.title}</IssueCardTitle>
           <StatusBadge status={item.status}>
             <StatusBadgeText status={item.status}>
-              {STATUS_LABELS[item.status as IssueStatus]}
+              {STATUS_LABELS[item.status]}
             </StatusBadgeText>
           </StatusBadge>
         </IssueCardRow>
@@ -157,7 +159,6 @@ export default function IssueFeedScreen() {
         </HeaderArea>
       </SafeAreaView>
 
-      {/* List */}
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
@@ -167,11 +168,14 @@ export default function IssueFeedScreen() {
         ListEmptyComponent={
           <EmptyState>
             <Ionicons name="alert-circle-outline" size={48} color="#dee2e6" />
-            <EmptyStateText>No issues found</EmptyStateText>
+            <EmptyStateText>
+              {loading ? 'Loading…' : 'No issues yet.\nLong-press on the map to report one.'}
+            </EmptyStateText>
           </EmptyState>
         }
       />
 
+      {/* Filter sheet */}
       <Modal
         visible={filterVisible}
         transparent

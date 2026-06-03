@@ -20,12 +20,11 @@ import * as ImagePicker from 'expo-image-picker';
 import TabBar from '../components/TabBar';
 
 import { Issue, IssueCategory } from '../types/issue';
-import { DUMMY_ISSUES } from '../data/dummyIssues';
+import { useIssues } from '../store/issuesStore';
 import {
   CATEGORIES,
   CATEGORY_COLORS,
   CATEGORY_MARKER_COLORS,
-  STATUS_LABELS,
 } from '../utils/issueHelpers';
 import {
   ScreenContainer,
@@ -33,8 +32,6 @@ import {
   HeaderOverlay,
   HeaderTitle,
   HeaderHint,
-  PinFab,
-  PinFabText,
   ModalBackdrop,
   Sheet,
   SheetHandle,
@@ -68,15 +65,12 @@ interface PendingPin {
   longitude: number;
 }
 
-// Local in-memory store 
-let localIssues: Issue[] = [...DUMMY_ISSUES];
-
 export default function ReportMapScreen() {
   const mapRef = useRef<MapView>(null);
+  const { issues, createIssue } = useIssues();
 
   // Map state
   const [mapReady, setMapReady] = useState(false);
-  const [allIssues, setAllIssues] = useState<Issue[]>(localIssues);
   const [pendingPin, setPendingPin] = useState<PendingPin | null>(null);
 
   // Form state
@@ -124,14 +118,12 @@ export default function ReportMapScreen() {
       Alert.alert('Permission Required', 'Camera access is needed to take a photo.');
       return;
     }
-
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.8,
     });
-
     if (!result.canceled && result.assets.length > 0) {
       setFormImageUri(result.assets[0].uri);
     }
@@ -153,7 +145,7 @@ export default function ReportMapScreen() {
     setFormImageUri(null);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formTitle.trim()) {
       Alert.alert('Title Required', 'Please enter a title for the issue.');
       return;
@@ -177,8 +169,8 @@ export default function ReportMapScreen() {
       createdAt: new Date().toISOString(),
     };
 
-    localIssues = [newIssue, ...localIssues];
-    setAllIssues([...localIssues]);
+    await createIssue(newIssue);
+
     setSubmitting(false);
     setFormVisible(false);
     setPendingPin(null);
@@ -200,8 +192,8 @@ export default function ReportMapScreen() {
           onMapReady={() => setMapReady(true)}
           onLongPress={handleLongPress}
         >
-          {/* Existing issues */}
-          {allIssues.map((issue) => (
+          {/* All persisted issues */}
+          {issues.map((issue) => (
             <Marker
               key={issue.id}
               coordinate={{
@@ -245,12 +237,12 @@ export default function ReportMapScreen() {
         {/* Issues count badge */}
         {mapReady && (
           <MarkerCountBadge>
-            <MarkerCountText>{allIssues.length} issues pinned</MarkerCountText>
+            <MarkerCountText>{issues.length} issues pinned</MarkerCountText>
           </MarkerCountBadge>
         )}
       </MapWrapper>
 
-      {/* Report Form Modal  */}
+      {/* Report Form Modal */}
       <Modal
         visible={formVisible}
         transparent
