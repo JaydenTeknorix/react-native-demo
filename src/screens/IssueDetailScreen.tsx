@@ -1,9 +1,9 @@
-import React from 'react';
 import { Alert, Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import MapView, { Marker, PROVIDER_DEFAULT, PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Sharing from 'expo-sharing';
 import { useIssues } from '../store/issuesStore';
 import { IssueStatus } from '../types/issue';
 import {
@@ -17,6 +17,7 @@ import {
   HeroImage,
   HeroPlaceholder,
   BackButton,
+  ShareButton,
   ContentCard,
   TitleRow,
   IssueTitle,
@@ -81,6 +82,28 @@ export default function IssueDetailScreen() {
     );
   };
 
+  const handleShare = async () => {
+    try {
+      if (!issue.imageUri) {
+        Alert.alert('No Image', 'This issue does not have an image to share.');
+        return;
+      }
+
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert('Sharing Unavailable', 'Sharing is not supported on this device/platform.');
+        return;
+      }
+
+      await Sharing.shareAsync(issue.imageUri, {
+        dialogTitle: `Share Image: ${issue.title}`,
+      });
+    } catch (error: any) {
+      console.warn('Share error:', error);
+      Alert.alert('Share Failed', error.message || 'An error occurred while sharing.');
+    }
+  };
+
   const catBg = CATEGORY_COLORS[issue.category];
   const markerColor = CATEGORY_MARKER_COLORS[issue.category];
 
@@ -119,6 +142,14 @@ export default function IssueDetailScreen() {
           >
             <Ionicons name="chevron-back" size={22} color="#1a1a2e" />
           </BackButton>
+
+          <ShareButton
+            onPress={handleShare}
+            accessibilityLabel="Share issue"
+            style={{ top: insets.top + 8, right: 16 + insets.right }}
+          >
+            <Ionicons name="share-outline" size={22} color="#1a1a2e" />
+          </ShareButton>
         </View>
 
         {/* Content card */}

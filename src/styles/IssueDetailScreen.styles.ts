@@ -35,6 +35,23 @@ export const BackButton = styled.TouchableOpacity`
   elevation: 4;
 `;
 
+export const ShareButton = styled.TouchableOpacity`
+  position: absolute;
+  top: 0px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.92);
+  justify-content: center;
+  align-items: center;
+  shadow-color: #000;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.12;
+  shadow-radius: 4px;
+  elevation: 4;
+`;
+
 export const ContentCard = styled.View`
   background-color: #ffffff;
   border-radius: 20px;

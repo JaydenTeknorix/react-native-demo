@@ -9,7 +9,7 @@ import type { AppStackParams } from '../AppLayout';
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TABS: Array<{
-  route: keyof AppStackParams;
+  route: 'Feed' | 'Report';
   label: string;
   active: IoniconName;
   inactive: IoniconName;
