@@ -53,6 +53,8 @@ import {
   MarkerCountText,
 } from '../styles/ReportMapScreen.styles';
 
+const GOOGLE_MAPS_API_KEY = 'AIzaSyBjZM2A2g7EnKcPRazxY-IMcXopFOqtJmA';
+
 const INITIAL_REGION = {
   latitude: 37.7749,
   longitude: -122.4194,
@@ -65,6 +67,33 @@ interface PendingPin {
   longitude: number;
 }
 
+// Reverse Geo-coding 
+async function reverseGeocode(latitude: number, longitude: number): Promise<string> {
+  try {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status === 'OK' && data.results.length > 0) {
+      const result = data.results[0];
+
+      // Prefer a named establishment or point of interest first
+      const poi = data.results.find((r: any) =>
+        r.types.includes('establishment') || r.types.includes('point_of_interest')
+      );
+      if (poi) return poi.formatted_address;
+
+      // Fall back to the top result's formatted address
+      return result.formatted_address;
+    }
+  } catch (e) {
+    console.warn('Reverse geocode failed:', e);
+  }
+
+  // Last resort: raw coordinates
+  return `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+}
+
 export default function ReportMapScreen() {
   const mapRef = useRef<MapView>(null);
   const { issues, createIssue } = useIssues();
@@ -72,6 +101,9 @@ export default function ReportMapScreen() {
   // Map state
   const [mapReady, setMapReady] = useState(false);
   const [pendingPin, setPendingPin] = useState<PendingPin | null>(null);
+
+  // store resolved place name separately
+  const [pendingAddress, setPendingAddress] = useState<string>('Resolving location…');
 
   // Form state
   const [formVisible, setFormVisible] = useState(false);
@@ -81,17 +113,24 @@ export default function ReportMapScreen() {
   const [formImageUri, setFormImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Map handlers 
-  const handleLongPress = (e: LongPressEvent) => {
+  // Map handlers
+  const handleLongPress = async (e: LongPressEvent) => {
     const { latitude, longitude } = e.nativeEvent.coordinate;
     setPendingPin({ latitude, longitude });
     resetForm();
+
+    // Show the sheet immediately, then resolve the name in the background
+    setPendingAddress('Resolving location…');
     setFormVisible(true);
+
+    const placeName = await reverseGeocode(latitude, longitude);
+    setPendingAddress(placeName);
   };
 
   const handleDismiss = () => {
     setFormVisible(false);
     setPendingPin(null);
+    setPendingAddress('Resolving location…');
   };
 
   // Image picker
@@ -137,7 +176,7 @@ export default function ReportMapScreen() {
     ]);
   };
 
-  // Form helpers 
+  // Form helpers
   const resetForm = () => {
     setFormTitle('');
     setFormDescription('');
@@ -164,7 +203,8 @@ export default function ReportMapScreen() {
       location: {
         latitude: pendingPin.latitude,
         longitude: pendingPin.longitude,
-        address: `${pendingPin.latitude.toFixed(4)}, ${pendingPin.longitude.toFixed(4)}`,
+        // Use resolved place name instead of raw coords
+        address: pendingAddress,
       },
       createdAt: new Date().toISOString(),
     };
@@ -174,6 +214,7 @@ export default function ReportMapScreen() {
     setSubmitting(false);
     setFormVisible(false);
     setPendingPin(null);
+    setPendingAddress('Resolving location…');
     resetForm();
 
     Alert.alert('Issue Reported', `"${newIssue.title}" has been pinned on the map.`);
@@ -185,7 +226,7 @@ export default function ReportMapScreen() {
         <MapView
           ref={mapRef}
           style={{ flex: 1 }}
-          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
+          provider={PROVIDER_GOOGLE}
           initialRegion={INITIAL_REGION}
           showsUserLocation
           showsCompass
@@ -256,7 +297,7 @@ export default function ReportMapScreen() {
               keyboardVerticalOffset={0}
               style={{ flex: 1, justifyContent: 'flex-end' }}
             >
-              <TouchableWithoutFeedback onPress={() => {}}>
+              <TouchableWithoutFeedback onPress={() => { }}>
                 <Sheet>
                   <SheetHandle />
                   <SheetTitle>New Issue Report</SheetTitle>
@@ -300,14 +341,12 @@ export default function ReportMapScreen() {
                       ))}
                     </CategoryRow>
 
-                    {/* Location */}
+                    {/* Location — now shows place name, not coords */}
                     <FormLabel>Location</FormLabel>
                     <LocationRow>
                       <Ionicons name="location-outline" size={16} color="#4361EE" />
-                      <LocationText numberOfLines={1}>
-                        {pendingPin
-                          ? `${pendingPin.latitude.toFixed(5)}, ${pendingPin.longitude.toFixed(5)}`
-                          : 'No pin placed'}
+                      <LocationText numberOfLines={2}>
+                        {pendingPin ? pendingAddress : 'No pin placed'}
                       </LocationText>
                     </LocationRow>
 

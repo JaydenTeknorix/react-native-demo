@@ -193,7 +193,7 @@ export default function IssueDetailScreen() {
           <MapPreviewContainer>
             <MapView
               style={{ flex: 1 }}
-              provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
+              provider={PROVIDER_GOOGLE}
               initialRegion={{
                 latitude: issue.location.latitude,
                 longitude: issue.location.longitude,
