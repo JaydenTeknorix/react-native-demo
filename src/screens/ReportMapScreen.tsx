@@ -203,7 +203,6 @@ export default function ReportMapScreen() {
       location: {
         latitude: pendingPin.latitude,
         longitude: pendingPin.longitude,
-        // Use resolved place name instead of raw coords
         address: pendingAddress,
       },
       createdAt: new Date().toISOString(),
