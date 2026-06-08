@@ -50,6 +50,7 @@ export function IssuesProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // creates issue
   const createIssue = useCallback(
     async (issue: Issue) => {
       const updated = [issue, ...issues];
@@ -59,6 +60,7 @@ export function IssuesProvider({ children }: { children: React.ReactNode }) {
     [issues, persist]
   );
 
+  // updates issue status
   const updateIssueStatus = useCallback(
     async (id: string, status: IssueStatus) => {
       const updated = issues.map((i) => (i.id === id ? { ...i, status } : i));
@@ -68,6 +70,7 @@ export function IssuesProvider({ children }: { children: React.ReactNode }) {
     [issues, persist]
   );
 
+  // deletes status
   const deleteIssue = useCallback(
     async (id: string) => {
       const updated = issues.filter((i) => i.id !== id);
