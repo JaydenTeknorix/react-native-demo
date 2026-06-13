@@ -92,6 +92,7 @@ export const IssueCard = styled.TouchableOpacity`
   shadow-opacity: 0.07;
   shadow-radius: 8px;
   elevation: 3;
+  position: relative;
 `;
 
 export const IssueCardImage = styled.Image`
@@ -144,6 +145,18 @@ export const IssueMeta = styled.Text`
   font-size: 12px;
   color: #6c757d;
   margin-top: 2px;
+`;
+
+export const IssueId = styled.Text`
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background-color: rgba(255,255,255,0.8);
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #6c757d;
+  font-weight: 500;
 `;
 
 export const CategoryTag = styled.View<{ bg: string }>`
@@ -211,6 +224,18 @@ export const SectionLabel = styled.Text`
   text-transform: uppercase;
   margin-top: 18px;
   margin-bottom: 8px;
+`;
+export const OfflineBanner = styled.View`
+  background-color: #ffebee;
+  padding: 12px;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const BannerText = styled.Text`
+  color: #b00020;
+  font-size: 14px;
+  font-weight: 500;
 `;
 
 export const OptionRow = styled.View`

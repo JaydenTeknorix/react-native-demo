@@ -1,4 +1,4 @@
-import { Alert, Platform, ScrollView, View } from 'react-native';
+import { Alert, Platform, ScrollView, View, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -34,6 +34,9 @@ import {
   StatusButtonText,
   DeleteButton,
   DeleteButtonText,
+  ContactButtonsRow,
+  ContactButton,
+  ContactButtonText,
 } from '../styles/IssueDetailScreen.styles';
 
 type HomeStackParamList = {
@@ -101,6 +104,34 @@ export default function IssueDetailScreen() {
     } catch (error: any) {
       console.warn('Share error:', error);
       Alert.alert('Share Failed', error.message || 'An error occurred while sharing.');
+    }
+  };
+
+  const handleCall = async () => {
+    try {
+      const url = 'tel:18001234567';
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Unavailable', 'Phone dialer is not available on this device.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Could not open the phone dialer.');
+    }
+  };
+
+  const handleMessage = async () => {
+    try {
+      const url = 'sms:18001234567';
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Unavailable', 'Messaging app is not available on this device.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Could not open the messaging app.');
     }
   };
 
@@ -235,6 +266,24 @@ export default function IssueDetailScreen() {
               </StatusButton>
             ))}
           </StatusButtonsRow>
+
+          <ContactButtonsRow>
+            <ContactButton
+              onPress={handleCall}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="call-outline" size={18} color="#4361EE" />
+              <ContactButtonText>Call Dept</ContactButtonText>
+            </ContactButton>
+
+            <ContactButton
+              onPress={handleMessage}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="chatbubble-outline" size={18} color="#4361EE" />
+              <ContactButtonText>Message Dept</ContactButtonText>
+            </ContactButton>
+          </ContactButtonsRow>
 
           {/* Delete button — only visible when completed */}
           {issue.status === 'completed' && (

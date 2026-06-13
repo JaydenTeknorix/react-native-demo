@@ -187,3 +187,28 @@ export const DeleteButtonText = styled.Text`
   color: #e63946;
   letter-spacing: 0.3px;
 `;
+
+export const ContactButtonsRow = styled.View`
+  flex-direction: row;
+  gap: 12px;
+  margin-top: 16px;
+`;
+
+export const ContactButton = styled.TouchableOpacity`
+  flex: 1;
+  flex-direction: row;
+  padding: 12px;
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  background-color: #eef2ff;
+  border-width: 1px;
+  border-color: #c7d2fe;
+  gap: 8px;
+`;
+
+export const ContactButtonText = styled.Text`
+  font-size: 14px;
+  font-weight: 600;
+  color: #4361EE;
+`;

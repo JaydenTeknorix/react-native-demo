@@ -16,6 +16,7 @@ interface IssuesContextValue {
   createIssue: (issue: Issue) => Promise<void>;
   updateIssueStatus: (id: string, status: IssueStatus) => Promise<void>;
   deleteIssue: (id: string) => Promise<void>;
+  reloadIssues: () => Promise<void>;
 }
 
 const IssuesContext = createContext<IssuesContextValue | null>(null);
@@ -53,7 +54,10 @@ export function IssuesProvider({ children }: { children: React.ReactNode }) {
   // creates issue
   const createIssue = useCallback(
     async (issue: Issue) => {
-      const updated = [issue, ...issues];
+      // Generate a UUID if not provided
+      const id = issue.id ?? Math.random().toString(36).substr(2, 9);
+      const newIssue = { ...issue, id, createdAt: new Date().toISOString() };
+      const updated = [newIssue, ...issues];
       setIssues(updated);
       await persist(updated);
     },
@@ -80,10 +84,28 @@ export function IssuesProvider({ children }: { children: React.ReactNode }) {
     [issues, persist]
   );
 
+  // Reload issues from AsyncStorage (used for pull-to-refresh)
+  const reloadIssues = useCallback(async () => {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEY);
+      const loaded = raw ? (JSON.parse(raw) as Issue[]) : [];
+      setIssues(loaded);
+    } catch (e) {
+      console.warn('Failed to reload issues', e);
+    }
+  }, []);
+
+  const contextValue: IssuesContextValue = {
+    issues,
+    loading,
+    createIssue,
+    updateIssueStatus,
+    deleteIssue,
+    reloadIssues,
+  };
+
   return (
-    <IssuesContext.Provider
-      value={{ issues, loading, createIssue, updateIssueStatus, deleteIssue }}
-    >
+    <IssuesContext.Provider value={contextValue}>
       {children}
     </IssuesContext.Provider>
   );

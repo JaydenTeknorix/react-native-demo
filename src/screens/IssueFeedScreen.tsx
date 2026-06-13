@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { RefreshControl } from 'react-native';
+import { useNetworkState } from 'expo-network';
 import { FlatList, Modal, ScrollView, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +31,7 @@ import {
   StatusBadge,
   StatusBadgeText,
   IssueMeta,
+  IssueId,
   CategoryTag,
   CategoryTagText,
   EmptyState,
@@ -44,6 +47,8 @@ import {
   SheetFooter,
   FooterButton,
   FooterButtonText,
+  OfflineBanner,
+  BannerText,
 } from '../styles/IssueFeedScreen.styles';
 import TabBar from '../components/TabBar';
 import type { AppStackParams } from '../AppLayout';
@@ -53,12 +58,20 @@ const STATUS_OPTIONS: IssueStatus[] = ['not_done', 'in_progress', 'completed'];
 
 export default function IssueFeedScreen() {
   const navigation = useNavigation<NavProp>();
-  const { issues, loading } = useIssues();
+  const { issues, loading, reloadIssues } = useIssues();
+  const networkState = useNetworkState();
 
   const [query, setQuery] = useState('');
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<IssueStatus[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<IssueCategory[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await reloadIssues();
+    setRefreshing(false);
+  };
 
   const toggleStatus = (status: IssueStatus) => {
     setSelectedStatuses((prev) =>
@@ -103,6 +116,8 @@ export default function IssueFeedScreen() {
         </IssueCardImagePlaceholder>
       )}
 
+      <IssueId>#ISSUE:{item.id.toString().slice(-4).toUpperCase()}</IssueId>
+
       <IssueCardBody>
         <IssueCardRow>
           <IssueCardTitle numberOfLines={1}>{item.title}</IssueCardTitle>
@@ -128,6 +143,11 @@ export default function IssueFeedScreen() {
 
   return (
     <ScreenContainer>
+      {networkState.isConnected === false && (
+        <OfflineBanner>
+          <BannerText>Offline – displaying cached data</BannerText>
+        </OfflineBanner>
+      )}
       <SafeAreaView edges={['top']}>
         <HeaderArea>
           <HeaderTitle>CityReport</HeaderTitle>
@@ -165,6 +185,7 @@ export default function IssueFeedScreen() {
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 24, paddingTop: 4 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
           <EmptyState>
             <Ionicons name="alert-circle-outline" size={48} color="#dee2e6" />
@@ -184,7 +205,7 @@ export default function IssueFeedScreen() {
       >
         <TouchableWithoutFeedback onPress={() => setFilterVisible(false)}>
           <ModalBackdrop>
-            <TouchableWithoutFeedback onPress={() => {}}>
+            <TouchableWithoutFeedback onPress={() => { }}>
               <FilterSheet>
                 <SheetHandle />
                 <SheetTitle>Filter Issues</SheetTitle>
